@@ -1,45 +1,35 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useReducer, useCallback, useMemo } from "react";
+import { favoriteReducre } from "./favoriteReducre";
+import useFetchPhotos from "./hooks/useFetchPhotos";
 function App() {
-  const [photo, setPhoto] = useState([]);
-  const [loding, setLoding] = useState(true);
-  const [error, setError] = useState(null);
+  const { photo, loding, error } = useFetchPhotos();
   const [search, setSearch] = useState("");
-  const [likedPhots, setLikedPhots] = useState([]);
-  useEffect(() => {
-    const getphotodata = async () => {
-      try {
-        setLoding(true);
-        setError(null);
-        const response = await fetch("https://picsum.photos/v2/list?limit=30");
-        if (!response.ok) {
-          throw new Error('something went wrong');
-        }
-        const data = await response.json();
-        setPhoto(data)
-      } catch (err) {
-        console.error('Error message', err.message);
-        setError('something is worng here plase try again ', JSON('err.message', err))
-      } finally {
-        setLoding(false)
-      }
-    }; getphotodata();
-  }, []);
+  const [likePhotos, dispatch] = useReducer(favoriteReducre, JSON.parse(localStorage.getItem("favoriteReducre")) || [])
 
-  const findauthor = photo.filter((item) => {
-    return item.author.toLowerCase().includes(search.toLowerCase());
-  });
+  const handleSerarch = useCallback((e) => {
+    setSearch(e.target.value);
+  }, [setSearch]);
+
+  const findauthor = useMemo(() => {
+    return photo.filter((item) =>
+      item.author.toLowerCase().includes(search.toLocaleLowerCase())
+    );
+  }, [photo, search]);
 
   const handleLiketoggle = (photoId) => {
-    if (likedPhots.includes(photoId)) {
-      setLikedPhots(likedPhots.filter(id => id !== photoId));
-    } else {
-      setLikedPhots([...likedPhots, photoId]);
-    };
+    dispatch({
+      type: "TOGGLE_FAV",
+      photoId: photoId
+    });
   };
 
-  const handelDownload = async ( photo_url, download_url) => {
+  useEffect(() => {
+    localStorage.setItem("favoriteReducre", JSON.stringify(likePhotos))
+  }, [likePhotos])
+
+  const handelDownload = async (download_url) => {
     try {
-      const response = await fetch(photo.url || download_url);
+      const response = await fetch(download_url);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob)
 
@@ -73,15 +63,22 @@ function App() {
   }
   return (
     <div className="min-h-screen w-full bg-white">
-      <div className="w-full bg-indigo-600 min-h-15 flex items-center justify-between p-4">
+      <div className="w-full bg-indigo-600 min-h-15 flex items-center justify-between p-4 gap-3">
         <h1 className="text-2xl font-bold text-white tracking-tighter">Photo <span className="text-white">Gallery</span></h1>
         <input type="text"
           className="w-20 focus:w-64 min-w-15 bg-white  rounded-2xl  text-gray-700 p-2 border-none"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSerarch}
           placeholder="Search" />
-        <img className="min-h-10 min-w-10 rounded-full bg-white"
-          src="react.svg" alt="" />
+        <div className="flex flex-col items-center">
+          <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-indigo-600 font-bold">
+            SC
+          </div>
+
+          <span className="text-white text-xs font-medium text-center">
+            Suraj Chandel
+          </span>
+        </div>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-2 p-2">
         {findauthor.map((photo) => (
@@ -97,12 +94,12 @@ function App() {
                 onClick={() => handleLiketoggle(photo.id)}
                 className="flex items-center gap-1 focus:outline-none transition-transform active:scale-95">
                 <svg
-                  xmlns="https://w3.org"
-                  fill={likedPhots.includes(photo.id) ? "currentColor" : "none"}
+                  xmlns="https://www.w3.org/2000/svg"
+                  fill={likePhotos.includes(photo.id) ? "currentColor" : "none"}
                   viewBox=" 0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className={`w-6 h-6 transition-color duration-200 ${likedPhots.includes(photo.id) ? "text-red-500 " : " text-gray-400 : hover:text-red-400"
+                  className={`w-6 h-6 transition-color duration-200 ${likePhotos.includes(photo.id) ? "text-red-500 " : " text-gray-400 hover:text-red-400"
                     }`}>
                   <path
                     strokeLinecap="round"
@@ -111,15 +108,15 @@ function App() {
                   />
                 </svg>
                 <span className="text-xs text-gray-500">
-                  {likedPhots.includes(photo.id) ? "Liked" : "Like"}
+                  {likePhotos.includes(photo.id) ? "Liked" : "Like"}
                 </span>
               </button>
 
               <button
-                onClick={() => handelDownload(photo.url || photo.download_url, photo.download_url)}
+                onClick={() => handelDownload(photo.download_url)}
                 className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg  text-xs font-medium transition-colors">
                 <svg
-                  xmlns="https://w3.org"
+                  xmlns="https://www.w3.org/2000/svg"
                   fill="none"
                   viewBox=" 0 0 24 24"
                   strokeWidth={1.5}
