@@ -63,7 +63,7 @@ function App() {
   }
   return (
     <div className="min-h-screen w-full bg-white">
-      <div className="w-full bg-indigo-600 min-h-15 flex items-center justify-between p-4 gap-3">
+      <div className="w-full bg-indigo-600 min-h-15 flex items-center justify-between p-2 gap-3">
         <h1 className="text-2xl font-bold text-white tracking-tighter">Photo <span className="text-white">Gallery</span></h1>
         <input type="text"
           className="w-20 focus:w-64 min-w-15 bg-white  rounded-2xl  text-gray-700 p-2 border-none"
